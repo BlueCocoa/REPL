@@ -18,6 +18,9 @@ $(TARGET) :
 	$(AR) $(ARFLAGS)
 	$(RANLIB) $(RANLIBFLAGS)
 
+demo : $(TARGET)
+	$(CXX) -std=c++14 -fPIC main.cpp $(LDFLAGS) -L./ -lrepl  -o main
+    
 install :
 	install -m 775 $(TARGET) $(PREFIX)/lib
 	install -m 644 $(HEADER) $(PREFIX)/include
