@@ -22,7 +22,7 @@
     fprintf(stderr,"\n");\
 }
 #else
-#define DEBUG_PRINT
+#define DEBUG_PRINT(...) (static_cast<void *>(0))
 #endif
 
 class REPL {

@@ -8,6 +8,7 @@ HEADER = REPL.h
 OBJECT = REPL.o
 TARGET = librepl.a
 
+LDFLAGS += -lreadline
 CPPFLAGS += -std=c++14 -fPIC -c -o $(OBJECT)
 ARFLAGS += -crv $(TARGET) $(OBJECT)
 RANLIBFLAGS += $(TARGET)
@@ -26,4 +27,5 @@ uninstall :
 	rm -f $(PREFIX)/include/$(HEADER)
 
 clean :
+	-rm -f $(OBJECT)
 	-rm -f $(TARGET)
