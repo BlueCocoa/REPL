@@ -204,6 +204,8 @@ REPL& REPL::start() {
                                         this->remove_history();
                                         this->terminal_buffer.erase(this->terminal_buffer.buffer.length() - 1);
                                         this->terminal_buffer.print(REPL::stringbuffer::PR_WITH_CLEAN, 1);
+                                    } else {
+                                        this->terminal_buffer.print(REPL::stringbuffer::PR_NOTHING_BUT_CLEAN, 2);
                                     }
                                 } // current key is backspace
                                 else
@@ -363,6 +365,7 @@ REPL::stringbuffer& REPL::stringbuffer::print(print_t pr, ssize_t clean) {
             for (long i = 0; i < backspace; i++) {
                 std::cout<<'\b';
             }
+            this->last_buffer_length = 0;
             break;
         }
         case PR_NOTHING_BUT_CLEAN: {
@@ -416,13 +419,14 @@ REPL::stringbuffer& REPL::stringbuffer::push_back(char c) {
 }
 
 REPL::stringbuffer& REPL::stringbuffer::clear() {
-    this->last_buffer_length = -1;
+    this->last_buffer_length = 0;
     this->buffer.clear();
     this->cursor = this->prompt.length();
     return *this;
 }
 
 REPL::stringbuffer& REPL::stringbuffer::erase(ssize_t pos) {
+    this->last_buffer_length = this->buffer.length();
     if (pos <= this->cursor - this->prompt.length()) {
         this->cursor--;
     }
