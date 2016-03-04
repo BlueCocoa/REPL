@@ -17,9 +17,9 @@
 
 #ifdef DEBUG
 #define DEBUG_PRINT(...) {\
-fprintf(stderr,"[REPL_DEBUG] %s: Line %d: ", __FILE__, __LINE__);\
-fprintf(stderr, __VA_ARGS__);\
-fprintf(stderr,"\n");\
+    fprintf(stderr,"[REPL_DEBUG] %s: Line %d: ", __FILE__, __LINE__);\
+    fprintf(stderr, __VA_ARGS__);\
+    fprintf(stderr,"\n");\
 }
 #else
 #define DEBUG_PRINT(...) (static_cast<void *>(0))
@@ -247,7 +247,8 @@ private:
      *  @brief Add history
      *
      *  @param line history to be added
-     *  @discussion If line is NULL, then add current buffer to history
+     *  @discussion If cache is false, then add current buffer to history
+     *              Othewise cache current buffer instead of adding it to history
      *
      *  @return *this
      */
@@ -256,7 +257,7 @@ private:
     /**
      *  @brief Remove history
      *
-     *  @param index remove history at # index
+     *  @discussion Remove cached line
      *
      *  @return *this
      */
