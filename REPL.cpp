@@ -45,6 +45,35 @@ int REPL::key3(unsigned char * input) {
     return KEY_UNKNOWN;
 }
 
+REPL& REPL::add_history(bool cache) {
+    if (!cache) {
+        // increase the number of history
+        this->_history_count++;
+        
+        // set current history index
+        this->_current_history_index = this->_history_count;
+        
+        ::add_history(strdup(this->terminal_buffer.buffer.c_str()));
+        
+        DEBUG_PRINT("Add %s to history", this->terminal_buffer.buffer.c_str());
+    } else {
+        this->terminal_buffer.cached = strdup(this->terminal_buffer.buffer.c_str());
+        DEBUG_PRINT("Line cached!");
+    }
+    return *this;
+}
+
+REPL& REPL::remove_history() {
+    if (this->terminal_buffer.cached) {
+        free((void *)this->terminal_buffer.cached);
+        this->terminal_buffer.cached = NULL;
+        this->_current_history_index--;
+        this->direction = 0;
+        DEBUG_PRINT("Remove cached line");
+    }
+    return *this;
+}
+
 REPL::REPL () {
     // using history feature
     using_history();
@@ -153,19 +182,16 @@ REPL& REPL::start() {
                             if (input[count - 1] == '\n')
                             {
                                 // add input buffer to history
-                                add_history(strdup(this->terminal_buffer.buffer.c_str()));
-                                
-                                // increase the number of history
-                                this->_history_count++;
-                                
-                                // set current history index
-                                this->_current_history_index = this->_history_count;
+                                this->add_history();
                                 
                                 // callback
                                 this->_continue = this->_readline(*this, this->terminal_buffer.buffer);
                                 
                                 // print prompt if allowed
-                                if (this->_continue) this->terminal_buffer.clear().print(REPL::stringbuffer::PR_PROMPT_ONLY);
+                                if (this->_continue) {
+                                    this->terminal_buffer.clear().print(REPL::stringbuffer::PR_PROMPT_ONLY);
+                                    this->_current_history_index = this->_history_count;
+                                }
                             } // user entered return key
                             else
                             { // current key is not return
@@ -175,12 +201,14 @@ REPL& REPL::start() {
                                     // if there are one or more characters in input buffer
                                     if (this->terminal_buffer.buffer.length() > 0)
                                     {
+                                        this->remove_history();
                                         this->terminal_buffer.erase(this->terminal_buffer.buffer.length() - 1);
                                         this->terminal_buffer.print(REPL::stringbuffer::PR_WITH_CLEAN, 1);
                                     }
                                 } // current key is backspace
                                 else
                                 { // current key is not backspace
+                                    this->remove_history();
                                     this->terminal_buffer.push_back(input[count - 1]).print(REPL::stringbuffer::PR_WITH_CLEAN);
                                 }
                             } // current key is not return
@@ -190,41 +218,87 @@ REPL& REPL::start() {
                             // switch keys
                             switch (key3(input)) {
                                 case KEY_ARROW_UP: {
-                                    // if index points to the newest one, decrese by one
-                                    if (this->_current_history_index == this->_history_count) {
-                                        this->_current_history_index--;
+                                    if (this->terminal_buffer.cached == NULL) {
+                                        DEBUG_PRINT("Caching current line");
+                                        this->add_history(true);
+                                        this->terminal_buffer.print(REPL::stringbuffer::PR_NOTHING_BUT_CLEAN, this->terminal_buffer.buffer.length());
                                     }
+                                    else if (this->_current_history_index == this->_history_count + 1)
+                                    {
+                                        if (this->direction == 1)
+                                        {
+                                            if (this->terminal_buffer.cached == NULL) {
+                                                this->_current_history_index -= 2;
+                                            } else {
+                                                this->_current_history_index -= 1;
+                                            }
+                                        }
+                                        else
+                                        {
+                                            // if index points to the newest one, decrese by one
+                                            this->_current_history_index = this->_history_count;
+                                            this->terminal_buffer.print(REPL::stringbuffer::PR_NOTHING_BUT_CLEAN, this->terminal_buffer.buffer.length());
+                                            this->_current_history_index = this->_history_count;
+                                        }
+                                    }
+                                    
+                                    DEBUG_PRINT("Getting previous history at index %d", this->_current_history_index);
                                     
                                     // get hist entry
                                     HIST_ENTRY * entry = history_get(this->_current_history_index);
                                     if (entry) {
-                                        long length = this->terminal_buffer.buffer.length();
-                                        this->terminal_buffer.replace_buffer(entry->line).print(REPL::stringbuffer::PR_WITH_CLEAN, 4 + length);
+                                        this->terminal_buffer.replace_buffer(entry->line).print(REPL::stringbuffer::PR_WITH_CLEAN, 4);
                                         this->_current_history_index--;
                                         if (this->_current_history_index == 0) {
                                             this->_current_history_index = 1;
                                         }
+                                        this->direction = -1;
+                                    } else {
+                                        this->terminal_buffer.print(REPL::stringbuffer::PR_NOTHING_BUT_CLEAN, 4);
+                                        this->direction = 0;
                                     }
+                                    
+                                    DEBUG_PRINT("direction is %d, index is %d", this->direction, this->_current_history_index);
                                     break;
                                 }
                                 case KEY_ARROW_DOWN: {
-                                    // if index points to the first one, increase by one
-                                    if (this->_current_history_index == 1) {
-                                        this->_current_history_index++;
+                                    if (this->_current_history_index == 1 && this->terminal_buffer.cached)
+                                    {
+                                        // if index points to the first one, increase by one
+                                        this->_current_history_index = 2;
                                     }
-                                    HIST_ENTRY * entry = history_get(this->_current_history_index);
-                                    if (entry) {
-                                        long length = this->terminal_buffer.buffer.length();
-                                        this->terminal_buffer.replace_buffer(entry->line).print(REPL::stringbuffer::PR_WITH_CLEAN, 4 + length);
-                                        this->_current_history_index++;
-                                        if (this->_current_history_index == this->_history_count + 1) {
-                                            this->_current_history_index = this->_history_count;
+                                    else if (this->direction == -1)
+                                    {
+                                        this->_current_history_index += 2;
+                                    }
+                                    
+                                    DEBUG_PRINT("Getting next history at index %d, count is %d", this->_current_history_index, this->_history_count);
+                                    
+                                    if (this->_current_history_index >= this->_history_count + 1) {
+                                        if (this->terminal_buffer.cached) {
+                                            this->terminal_buffer.replace_buffer(this->terminal_buffer.cached);
                                         }
+                                        this->terminal_buffer.print(REPL::stringbuffer::PR_WITH_CLEAN, 4);
+                                        this->_current_history_index = this->_history_count + 1;
+                                    } else {
+                                        // get hist entry
+                                        HIST_ENTRY * entry = history_get(this->_current_history_index);
+                                        if (entry) {
+                                            this->terminal_buffer.replace_buffer(entry->line).print(REPL::stringbuffer::PR_WITH_CLEAN, 4);
+                                            this->direction = 1;
+                                        } else {
+                                            this->terminal_buffer.print(REPL::stringbuffer::PR_NOTHING_BUT_CLEAN, 4);
+                                            this->direction = 0;
+                                        }
+                                        this->_current_history_index++;
                                     }
+                                    
+                                    
+                                    DEBUG_PRINT("direction is %d, index is %d", this->direction, this->_current_history_index);
+                                    
                                     break;
                                 }
                                 case KEY_ARROW_LEFT: {
-                                    //                                    long length = this->terminal_buffer.buffer.length();
                                     this->terminal_buffer.left().print(REPL::stringbuffer::PR_WITH_CLEAN, 4);
                                     break;
                                 }
@@ -238,6 +312,7 @@ REPL& REPL::start() {
                         } // did read 3 byte
                         else
                         { // did read some byte
+                            this->remove_history();
                             this->terminal_buffer.append((char *)input).print(REPL::stringbuffer::PR_WITH_CLEAN);
                         } // did read some byte
                     }
@@ -270,7 +345,7 @@ REPL::stringbuffer& REPL::stringbuffer::print(print_t pr, ssize_t clean) {
             std::cout<<this->prompt<<std::flush;
             break;
         case PR_WITH_CLEAN: {
-            clean += this->prompt.length() + this->buffer.length();
+            clean += this->prompt.length() + this->last_buffer_length + this->buffer.length() + 1;
             long backspace = this->prompt.length() + this->buffer.length() - this->cursor;
             
             for (int i = 0; i < clean; i++) {
@@ -286,6 +361,18 @@ REPL::stringbuffer& REPL::stringbuffer::print(print_t pr, ssize_t clean) {
             std::cout<<this->prompt<<this->buffer<<std::flush;
             
             for (long i = 0; i < backspace; i++) {
+                std::cout<<'\b';
+            }
+            break;
+        }
+        case PR_NOTHING_BUT_CLEAN: {
+            for (int i = 0; i < clean; i++) {
+                std::cout<<'\b';
+            }
+            for (int i = 0; i < clean; i++) {
+                std::cout<<' ';
+            }
+            for (int i = 0; i < clean; i++) {
                 std::cout<<'\b';
             }
             break;
@@ -329,6 +416,7 @@ REPL::stringbuffer& REPL::stringbuffer::push_back(char c) {
 }
 
 REPL::stringbuffer& REPL::stringbuffer::clear() {
+    this->last_buffer_length = -1;
     this->buffer.clear();
     this->cursor = this->prompt.length();
     return *this;
@@ -343,6 +431,7 @@ REPL::stringbuffer& REPL::stringbuffer::erase(ssize_t pos) {
 }
 
 REPL::stringbuffer& REPL::stringbuffer::replace_buffer(const std::string &buffer) {
+    this->last_buffer_length = this->buffer.length();
     this->buffer = buffer;
     this->cursor = this->prompt.length() + this->buffer.length();
     return *this;

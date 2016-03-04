@@ -17,9 +17,9 @@
 
 #ifdef DEBUG
 #define DEBUG_PRINT(...) {\
-    fprintf(stderr,"[REPL_DEBUG] %s: Line %d: ", __FILE__, __LINE__);\
-    fprintf(stderr, __VA_ARGS__);\
-    fprintf(stderr,"\n");\
+fprintf(stderr,"[REPL_DEBUG] %s: Line %d: ", __FILE__, __LINE__);\
+fprintf(stderr, __VA_ARGS__);\
+fprintf(stderr,"\n");\
 }
 #else
 #define DEBUG_PRINT(...) (static_cast<void *>(0))
@@ -87,6 +87,8 @@ private:
         std::string prompt = "";
         std::string buffer = "";
         unsigned long long cursor = 0;
+        ssize_t last_buffer_length = 0;
+        const char * cached = NULL;
     private:
         /**
          *  @brief Set prompt
@@ -106,7 +108,8 @@ private:
         
         enum print_t {
             PR_PROMPT_ONLY,
-            PR_WITH_CLEAN
+            PR_WITH_CLEAN,
+            PR_NOTHING_BUT_CLEAN
         };
         /**
          *  @brief Print current buffer to terminal
@@ -174,6 +177,8 @@ private:
      */
     stringbuffer terminal_buffer;
     
+    int direction = 0;
+    
     enum key_t : int {
         KEY_BACKSPACE = 127,
         KEY_RETURN = '\n',
@@ -237,6 +242,25 @@ private:
      *  @return The corresponding key
      */
     int key3(unsigned char * input);
+    
+    /**
+     *  @brief Add history
+     *
+     *  @param line history to be added
+     *  @discussion If line is NULL, then add current buffer to history
+     *
+     *  @return *this
+     */
+    REPL& add_history(bool cache = false);
+    
+    /**
+     *  @brief Remove history
+     *
+     *  @param index remove history at # index
+     *
+     *  @return *this
+     */
+    REPL& remove_history();
 };
 
 #endif /* REPL_H */
