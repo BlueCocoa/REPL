@@ -14,12 +14,11 @@ RANLIBFLAGS += $(TARGET)
 
 $(TARGET) : 
 	$(CXX) $(CPPFLAGS) $(SOURCE)
-	$(AR) cr $(TARGET)
-	$(AR) crv $(TARGET) $(OBJECT)
+	case `uname` in Darwin*) $(AR) crv $(TARGET) $(OBJECT) ;; *) $(AR) cr $(TARGET) && $(AR) crv $(TARGET) $(OBJECT) ;; esac
 	$(RANLIB) $(RANLIBFLAGS)
 
 demo : $(TARGET)
-	$(CXX) $(LDFLAGS) -L./ -lrepl -std=c++14 -fPIC main.cpp -o main
+	$(CXX) $(LDFLAGS) $(OBJECT) -L./ -lrepl -std=c++14 -fPIC main.cpp -o demo
     
 install :
 	install -m 775 $(TARGET) $(PREFIX)/lib

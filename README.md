@@ -1,6 +1,8 @@
 # REPL
 A lightweight asynchronous REPL library with history feature support! 
 
+Tested on OS X / Raspbian Linux / iOS. 
+
 ### Compile
 ```$ make && sudo make install```
 
@@ -39,3 +41,13 @@ To enable debug infomation,
 		// and it'll call notify_one() when retrives false in readline callback
 		ouolang.condition(cond);
 		t.join();
+
+### Screenshots
+#### Raspbian Linux
+![Raspbian Linux](https://raw.githubusercontent.com/BlueCocoa/REPL/master/screenshot-Raspbian%20Linux.png)
+
+#### iOS
+![iOS](https://raw.githubusercontent.com/BlueCocoa/REPL/master/screenshot-iOS.png)
+
+#### OS X
+See screenrecord.mp4
