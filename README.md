@@ -8,9 +8,9 @@ To enable debug infomation,
 ```$ CPPFLAGS='-DDEBUG=1' make && sudo make install```
 
 ### Dependencies
-- edit
+- [edit](https://sourceforge.net/projects/libedit/)
 - pthread
-- termcap
+- [termcap](http://ftp.gnu.org/gnu/termcap/)
 
 ### Usage
 
