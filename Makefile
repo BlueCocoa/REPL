@@ -8,18 +8,18 @@ HEADER = REPL.h
 OBJECT = REPL.o
 TARGET = librepl.a
 
-LDFLAGS += -lreadline
-CPPFLAGS += -std=c++14 -fPIC -c -o $(OBJECT)
-ARFLAGS += -crv $(TARGET) $(OBJECT)
+LDFLAGS += -L/usr/local/lib -ledit -lpthread -ltermcap
+CPPFLAGS += -I/usr/local/include -std=c++14 -fPIC -c -o $(OBJECT)
 RANLIBFLAGS += $(TARGET)
 
 $(TARGET) : 
 	$(CXX) $(CPPFLAGS) $(SOURCE)
-	$(AR) $(ARFLAGS)
+	$(AR) cr $(TARGET)
+	$(AR) crv $(TARGET) $(OBJECT)
 	$(RANLIB) $(RANLIBFLAGS)
 
 demo : $(TARGET)
-	$(CXX) -std=c++14 -fPIC main.cpp $(LDFLAGS) -L./ -lrepl  -o main
+	$(CXX) $(LDFLAGS) -L./ -lrepl -std=c++14 -fPIC main.cpp -o main
     
 install :
 	install -m 775 $(TARGET) $(PREFIX)/lib

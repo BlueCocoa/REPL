@@ -8,13 +8,23 @@
 
 #include "REPL.h"
 
-#include <editline/readline.h>
 #include <iostream>
 #include <stdlib.h>
+#include <string.h>
 #include <sys/ioctl.h>
-#include <sys/filio.h>
 #include <sys/select.h>
+#include <termcap.h>
 #include <unistd.h>
+
+#ifdef __MACH__
+// OS X
+#include <sys/filio.h>
+#include <editline/readline.h>
+#else
+// Linux
+#include <asm-generic/ioctls.h>
+#include <readline/readline.h>
+#endif
 
 #pragma mark
 #pragma mark - REPL Public Functions
@@ -370,25 +380,25 @@ int REPL::key3(unsigned char * input) {
         // OS X - Xcode - arrow up
         return KEY_ARROW_UP;
     } else if (input[2] == 65 && input[1] == 91 && input[0] == 27) {
-        // OS X - Terminal - arrow up
+        // OS X / Linux - Terminal - arrow up
         return KEY_ARROW_UP;
     } else if (input[2] == 129 && input[1] == 156 && input[0] == 239) {
         // OS X - Xcode - arrow down
         return KEY_ARROW_DOWN;
     } else if (input[2] == 66 && input[1] == 91 && input[0] == 27) {
-        // OS X - Terminal - arrow down
+        // OS X / Linux - Terminal - arrow down
         return KEY_ARROW_DOWN;
     } else if (input[2] == 130 && input[1] == 156 && input[0] == 239) {
         // OS X - Xcode - arrow left
         return KEY_ARROW_LEFT;
     } else if (input[2] == 68 && input[1] == 91 && input[0] == 27) {
-        // OS X - Terminal - arrow left
+        // OS X / Linux - Terminal - arrow left
         return KEY_ARROW_LEFT;
     } else if (input[2] == 131 && input[1] == 156 && input[0] == 239) {
         // OS X - Xcode - arrow right
         return KEY_ARROW_RIGHT;
     } else if (input[2] == 67 && input[1] == 91 && input[0] == 27) {
-        // OS X - Terminal - arrow right
+        // OS X / Linux - Terminal - arrow right
         return KEY_ARROW_RIGHT;
     }
     return KEY_UNKNOWN;

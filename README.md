@@ -7,6 +7,11 @@ A lightweight asynchronous REPL library with history feature support!
 To enable debug infomation, 
 ```$ CPPFLAGS='-DDEBUG=1' make && sudo make install```
 
+### Dependencies
+- edit
+- pthread
+- termcap
+
 ### Usage
 
 		REPL ouolang;
